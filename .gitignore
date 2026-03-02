@@ -11,3 +11,10 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+data/
+.cta.json
+.content-collections
+.bluesky-sessions.json
+public/uploads
+.pnpm-store
+.youtube-sessions.json
