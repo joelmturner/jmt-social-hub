@@ -13,14 +13,38 @@ export type BlueskySessionInfo = {
   did: string
 } | null
 
-/** Returns current Bluesky session info if logged in. */
+/** Decode JWT payload and return exp (seconds) if present. Returns null if invalid/missing. */
+function getJwtExp(accessJwt: string): number | null {
+  try {
+    const parts = accessJwt.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(
+      Buffer.from(parts[1], 'base64url').toString('utf-8'),
+    ) as { exp?: number }
+    return typeof payload.exp === 'number' ? payload.exp : null
+  } catch {
+    return null
+  }
+}
+
+/** Returns current Bluesky session info if logged in and token not expired. Clears session if expired. */
 export const getBlueskySession = createServerFn().handler(
   async (): Promise<BlueskySessionInfo> => {
-    const { getSessionCookieName, getSessionById } = await import('./bluesky-session')
+    const {
+      getSessionCookieName,
+      getSessionById,
+      deleteSessionById,
+    } = await import('./bluesky-session')
     const sessionId = getCookie(getSessionCookieName())
     if (!sessionId) return null
     const data = getSessionById(sessionId)
     if (!data) return null
+    const exp = getJwtExp(data.accessJwt)
+    if (exp !== null && exp * 1000 < Date.now()) {
+      deleteSessionById(sessionId)
+      deleteCookie(getSessionCookieName(), { path: '/' })
+      return null
+    }
     return { handle: data.handle, did: data.did }
   },
 )
