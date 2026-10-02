@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "biome check --write --no-errors-on-unmatched"
+      }
+    ]
+  }
+}

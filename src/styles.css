@@ -90,6 +90,37 @@
   --sidebar-accent-foreground: #00f5ff;
   --sidebar-border: rgba(0, 245, 255, 0.2);
   --sidebar-ring: #00f5ff;
+
+  /* tokenized colors (no inline hex/rgba elsewhere) */
+  --link-hover: #5dfaff;
+  --link-underline: rgba(0, 245, 255, 0.5);
+  --link-glow: rgba(0, 245, 255, 0.5);
+  --code-bg: rgba(22, 22, 42, 0.9);
+  --prose-pre-bg: #1d2e45;
+  --prose-pre-fg: #e8efff;
+  --grid-line: rgba(0, 245, 255, 0.5);
+  --gradient-purple-08: rgba(123, 44, 191, 0.08);
+  --gradient-magenta-06: rgba(255, 42, 109, 0.06);
+  --gradient-cyan-12: rgba(0, 245, 255, 0.12);
+  --gradient-magenta-08: rgba(255, 42, 109, 0.08);
+  --border-glow: rgba(0, 245, 255, 0.35);
+  --surface-from: rgba(28, 28, 48, 0.95);
+  --surface-to: rgba(22, 22, 42, 0.9);
+  --glow-primary-inset: rgba(0, 245, 255, 0.1);
+  --glow-primary-sm: rgba(0, 245, 255, 0.08);
+  --glow-purple-sm: rgba(123, 44, 191, 0.06);
+  --border-glow-25: rgba(0, 245, 255, 0.25);
+  --surface-from-90: rgba(28, 28, 48, 0.9);
+  --surface-to-85: rgba(22, 22, 42, 0.85);
+  --glow-primary-feature: rgba(0, 245, 255, 0.06);
+  --border-glow-50: rgba(0, 245, 255, 0.5);
+  --glow-primary-feature-hover: rgba(0, 245, 255, 0.12);
+  --footer-bg: rgba(10, 10, 18, 0.85);
+  --footer-shadow: rgba(0, 245, 255, 0.08);
+  --nav-link-glow: rgba(0, 245, 255, 0.4);
+  --header-shadow: rgba(0, 245, 255, 0.08);
+  --button-glow: rgba(0, 245, 255, 0.3);
+  --button-glow-hover: rgba(0, 245, 255, 0.4);
 }
 
 :root[data-theme="light"] {
@@ -186,10 +217,10 @@ body::before {
   pointer-events: none;
   z-index: -1;
   background:
-    linear-gradient(180deg, transparent 0%, rgba(123, 44, 191, 0.08) 40%, rgba(255, 42, 109, 0.06) 70%, transparent 100%),
-    radial-gradient(ellipse 120% 80% at 50% -30%, rgba(0, 245, 255, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse 80% 50% at 80% 100%, rgba(255, 42, 109, 0.08) 0%, transparent 45%),
-    radial-gradient(ellipse 60% 40% at 10% 100%, rgba(123, 44, 191, 0.08) 0%, transparent 45%);
+    linear-gradient(180deg, transparent 0%, var(--gradient-purple-08) 40%, var(--gradient-magenta-06) 70%, transparent 100%),
+    radial-gradient(ellipse 120% 80% at 50% -30%, var(--gradient-cyan-12) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 80% 100%, var(--gradient-magenta-08) 0%, transparent 45%),
+    radial-gradient(ellipse 60% 40% at 10% 100%, var(--gradient-purple-08) 0%, transparent 45%);
 }
 
 body::after {
@@ -200,27 +231,27 @@ body::after {
   z-index: -1;
   opacity: 0.03;
   background-image:
-    linear-gradient(rgba(0, 245, 255, 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.5) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
 a {
   color: var(--neon-cyan);
-  text-decoration-color: rgba(0, 245, 255, 0.5);
+  text-decoration-color: var(--link-underline);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
 a:hover {
-  color: #5dfaff;
-  text-shadow: 0 0 12px rgba(0, 245, 255, 0.5);
+  color: var(--link-hover);
+  text-shadow: 0 0 12px var(--link-glow);
 }
 
 code {
   font-size: 0.9em;
   border: 1px solid var(--border);
-  background: rgba(22, 22, 42, 0.9);
+  background: var(--code-bg);
   border-radius: 4px;
   padding: 2px 7px;
   color: var(--neon-cyan);
@@ -238,8 +269,8 @@ pre code {
 .prose pre {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #1d2e45;
-  color: #e8efff;
+  background: var(--prose-pre-bg);
+  color: var(--prose-pre-fg);
   overflow-x: auto;
 }
 
@@ -264,25 +295,25 @@ pre code {
 }
 
 .island-shell {
-  border: 1px solid rgba(0, 245, 255, 0.35);
-  background: linear-gradient(165deg, rgba(28, 28, 48, 0.95), rgba(22, 22, 42, 0.9));
+  border: 1px solid var(--border-glow);
+  background: linear-gradient(165deg, var(--surface-from), var(--surface-to));
   box-shadow:
-    0 0 0 1px rgba(0, 245, 255, 0.1) inset,
-    0 0 32px rgba(0, 245, 255, 0.08),
-    0 0 80px rgba(123, 44, 191, 0.06);
+    0 0 0 1px var(--glow-primary-inset) inset,
+    0 0 32px var(--glow-primary-sm),
+    0 0 80px var(--glow-purple-sm);
   backdrop-filter: blur(8px);
 }
 
 .feature-card {
-  border: 1px solid rgba(0, 245, 255, 0.25);
-  background: linear-gradient(165deg, rgba(28, 28, 48, 0.9), rgba(22, 22, 42, 0.85));
-  box-shadow: 0 0 24px rgba(0, 245, 255, 0.06);
+  border: 1px solid var(--border-glow-25);
+  background: linear-gradient(165deg, var(--surface-from-90), var(--surface-to-85));
+  box-shadow: 0 0 24px var(--glow-primary-feature);
 }
 
 .feature-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(0, 245, 255, 0.5);
-  box-shadow: 0 0 32px rgba(0, 245, 255, 0.12);
+  border-color: var(--border-glow-50);
+  box-shadow: 0 0 32px var(--glow-primary-feature-hover);
 }
 
 button,
@@ -325,7 +356,7 @@ a {
 .nav-link:hover,
 .nav-link.is-active {
   color: var(--neon-cyan);
-  text-shadow: 0 0 12px rgba(0, 245, 255, 0.4);
+  text-shadow: 0 0 12px var(--nav-link-glow);
 }
 
 .nav-link:hover::after,
@@ -340,9 +371,9 @@ a {
 }
 
 .site-footer {
-  border-top: 1px solid rgba(0, 245, 255, 0.2);
-  background: rgba(10, 10, 18, 0.85);
-  box-shadow: 0 -1px 0 rgba(0, 245, 255, 0.08);
+  border-top: 1px solid var(--border);
+  background: var(--footer-bg);
+  box-shadow: 0 -1px 0 var(--footer-shadow);
 }
 
 .rise-in {
@@ -371,4 +402,21 @@ a {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* tokenized shadow utilities for header and button */
+.shadow-header-bar {
+  box-shadow: 0 1px 0 var(--header-shadow);
+}
+
+.shadow-indicator-glow {
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.shadow-button-glow {
+  box-shadow: 0 0 20px var(--button-glow);
+}
+
+.shadow-button-glow:hover {
+  box-shadow: 0 0 24px var(--button-glow-hover);
 }

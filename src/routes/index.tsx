@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Image } from "@unpic/react";
 import { allPosts } from "content-collections";
 import { useCallback, useEffect, useState } from "react";
 import type { ControllerRenderProps } from "react-hook-form";
@@ -7,12 +8,21 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
 	type BlueskySessionInfo,
+	blueskyCdnImageUrl,
 	getBlueskySession,
 	logoutBluesky,
 	postImageToBluesky,
 } from "#/lib/bluesky-server";
 import { compressImageFile } from "#/lib/compress-image";
-import { CLOUDINARY_CATEGORY_HASHTAGS } from "#/lib/constants";
+import {
+	CLOUDINARY_CATEGORY_HASHTAGS,
+	wasSentToCloudinary,
+} from "#/lib/constants";
+import {
+	getInstagramSession,
+	type InstagramSessionInfo,
+} from "#/lib/instagram-auth";
+import { postImageToInstagram } from "#/lib/instagram-server";
 import { recordPosted, uploadToCloudinaryIfTagged } from "#/lib/publish-server";
 import type { ScheduledItem } from "#/lib/scheduled-queue";
 import {
@@ -22,6 +32,7 @@ import {
 } from "#/lib/scheduled-server";
 import { getYoutubeSession, type YoutubeSessionInfo } from "#/lib/youtube-auth";
 import { postVideoToYoutubeShorts } from "#/lib/youtube-server";
+import { CloudinaryBadge } from "@/components/CloudinaryBadge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,13 +46,28 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+
+const INSTAGRAM_CAPTION_MAX = 2200;
+/** common Instagram feed ratios: 1:1, 4:5, 1.91:1 (with small tolerance) */
+const IG_ASPECT_TOLERANCE = 0.08;
+const IG_ASPECT_TARGETS = [1, 4 / 5, 1.91];
+
+function isCommonInstagramAspect(width: number, height: number): boolean {
+	if (!width || !height) return true;
+	const ratio = width / height;
+	return IG_ASPECT_TARGETS.some(
+		(target) => Math.abs(ratio - target) <= IG_ASPECT_TOLERANCE,
+	);
+}
 
 const publishSchema = z
 	.object({
 		caption: z.string().max(300),
 		postToBluesky: z.boolean(),
 		postToYoutube: z.boolean(),
+		postToInstagram: z.boolean(),
 		file: z.union([z.instanceof(File), z.null()]),
 		schedule: z.boolean(),
 		scheduledAt: z.string().optional(),
@@ -72,13 +98,20 @@ function App() {
 	const [youtubeSession, setYoutubeSession] = useState<
 		YoutubeSessionInfo | null | "loading"
 	>("loading");
+	const [instagramSession, setInstagramSession] = useState<
+		InstagramSessionInfo | null | "loading"
+	>("loading");
 	const [publishing, setPublishing] = useState(false);
 	const [publishError, setPublishError] = useState<string | null>(null);
 	const [publishSuccess, setPublishSuccess] = useState(false);
+	const [aspectWarn, setAspectWarn] = useState<string | null>(null);
 
 	const [scheduledList, setScheduledList] = useState<ScheduledItem[]>([]);
 	const [scheduleSuccess, setScheduleSuccess] = useState<string | null>(null);
-	const [historyToShow, setHistoryToShow] = useState(12);
+	const [historyToShow, setHistoryToShow] = useState(20);
+	const [videoAspectRatios, setVideoAspectRatios] = useState<
+		Record<string, number>
+	>({});
 
 	const form = useForm<PublishValues>({
 		resolver: zodResolver(publishSchema),
@@ -86,6 +119,7 @@ function App() {
 			caption: "",
 			postToBluesky: true,
 			postToYoutube: false,
+			postToInstagram: false,
 			file: null,
 			schedule: false,
 			scheduledAt: "",
@@ -93,6 +127,7 @@ function App() {
 	});
 
 	const isSchedule = form.watch("schedule");
+	const watchedFile = form.watch("file");
 
 	const loadScheduled = useCallback(async () => {
 		const list = await listScheduled();
@@ -106,6 +141,13 @@ function App() {
 		if (isSchedule) loadScheduled();
 	}, [isSchedule, loadScheduled]);
 
+	// Instagram scheduling is not supported in v1 — force off when schedule is on
+	useEffect(() => {
+		if (isSchedule) {
+			form.setValue("postToInstagram", false);
+		}
+	}, [isSchedule, form]);
+
 	useEffect(() => {
 		getBlueskySession().then((s) => {
 			const value = s ?? null;
@@ -115,7 +157,40 @@ function App() {
 			}
 		});
 		getYoutubeSession().then((s) => setYoutubeSession(s ?? null));
-	}, [navigate]);
+		getInstagramSession().then((s) => {
+			const value = s ?? null;
+			setInstagramSession(value);
+			if (value && !form.getValues("schedule")) {
+				form.setValue("postToInstagram", true);
+			}
+		});
+	}, [navigate, form]);
+
+	// soft warn when image aspect is outside common Instagram feed ratios
+	useEffect(() => {
+		if (!watchedFile || !watchedFile.type.startsWith("image/")) {
+			setAspectWarn(null);
+			return;
+		}
+		const url = URL.createObjectURL(watchedFile);
+		const img = new window.Image();
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			if (!isCommonInstagramAspect(img.naturalWidth, img.naturalHeight)) {
+				setAspectWarn(
+					"This image’s aspect ratio is outside common Instagram feed ratios (1:1, 4:5, 1.91:1). You can still post.",
+				);
+			} else {
+				setAspectWarn(null);
+			}
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			setAspectWarn(null);
+		};
+		img.src = url;
+		return () => URL.revokeObjectURL(url);
+	}, [watchedFile]);
 
 	async function onSubmit(values: PublishValues) {
 		const {
@@ -123,9 +198,12 @@ function App() {
 			file,
 			postToBluesky,
 			postToYoutube,
+			postToInstagram: postToInstagramRaw,
 			schedule,
 			scheduledAt,
 		} = values;
+		// scheduling does not support Instagram in v1
+		const postToInstagram = schedule ? false : postToInstagramRaw;
 		if (!file) return;
 		setPublishError(null);
 		setPublishSuccess(false);
@@ -138,6 +216,10 @@ function App() {
 			);
 			return;
 		}
+		if (!isImage && postToInstagram) {
+			setPublishError("Instagram feed posts require an image.");
+			return;
+		}
 		if (postToYoutube && !isVideo) {
 			setPublishError("YouTube Shorts require a video file.");
 			return;
@@ -146,8 +228,26 @@ function App() {
 			setPublishError("Connect your YouTube channel on the Login page first.");
 			return;
 		}
+		if (
+			postToInstagram &&
+			instagramSession !== "loading" &&
+			!instagramSession
+		) {
+			setPublishError("Connect Instagram on the Login page first.");
+			return;
+		}
 		if (postToBluesky && !session) {
 			setPublishError("Log in with Bluesky to post there.");
+			return;
+		}
+		if (postToInstagram && caption.length > INSTAGRAM_CAPTION_MAX) {
+			setPublishError(
+				`Instagram captions must be ${INSTAGRAM_CAPTION_MAX} characters or fewer.`,
+			);
+			return;
+		}
+		if (!postToBluesky && !postToYoutube && !postToInstagram) {
+			setPublishError("Choose at least one destination.");
 			return;
 		}
 		setPublishing(true);
@@ -204,6 +304,9 @@ function App() {
 					caption: "",
 					postToBluesky: true,
 					postToYoutube: false,
+					postToInstagram: Boolean(
+						instagramSession && instagramSession !== "loading",
+					),
 					file: null,
 					schedule: true,
 					scheduledAt: "",
@@ -212,7 +315,7 @@ function App() {
 				return;
 			}
 
-			// immediate publish path
+			// immediate publish path — best-effort per platform
 			const record = {
 				caption,
 				mediaPath,
@@ -225,7 +328,11 @@ function App() {
 				mediaType: "image" | "video";
 				bluesky?: { postedAt: string; uri: string };
 				youtube?: { postedAt: string; videoId?: string };
+				instagram?: { postedAt: string; mediaId?: string; uri?: string };
 			};
+
+			const errors: string[] = [];
+			let blueskyCdnUrl: string | undefined;
 
 			if (postToBluesky && session) {
 				const result = await postImageToBluesky({
@@ -233,10 +340,10 @@ function App() {
 				});
 				if (result.ok) {
 					record.bluesky = { postedAt: createdAt, uri: result.uri };
+					const cdn = blueskyCdnImageUrl(result.did, result.cid);
+					if (cdn) blueskyCdnUrl = cdn;
 				} else {
-					setPublishError(result.error);
-					setPublishing(false);
-					return;
+					errors.push(`Bluesky: ${result.error}`);
 				}
 			}
 
@@ -247,10 +354,36 @@ function App() {
 				if (result.ok) {
 					record.youtube = { postedAt: createdAt, videoId: result.videoId };
 				} else {
-					setPublishError(result.error);
-					setPublishing(false);
-					return;
+					errors.push(`YouTube: ${result.error}`);
 				}
+			}
+
+			if (postToInstagram) {
+				const result = await postImageToInstagram({
+					data: {
+						mediaPath,
+						caption,
+						...(blueskyCdnUrl ? { imageUrl: blueskyCdnUrl } : {}),
+					},
+				});
+				if (result.ok) {
+					record.instagram = {
+						postedAt: createdAt,
+						mediaId: result.mediaId,
+						...(result.permalink ? { uri: result.permalink } : {}),
+					};
+				} else {
+					errors.push(`Instagram: ${result.error}`);
+				}
+			}
+
+			const anySuccess = Boolean(
+				record.bluesky || record.youtube || record.instagram,
+			);
+			if (!anySuccess) {
+				setPublishError(errors.join(" · ") || "Publish failed");
+				setPublishing(false);
+				return;
 			}
 
 			await recordPosted({ data: record });
@@ -266,11 +399,17 @@ function App() {
 					/* non-blocking */
 				});
 			}
+			if (errors.length > 0) {
+				setPublishError(`Published with some errors: ${errors.join(" · ")}`);
+			}
 			setPublishSuccess(true);
 			form.reset({
 				caption: "",
 				postToBluesky: true,
 				postToYoutube: false,
+				postToInstagram: Boolean(
+					instagramSession && instagramSession !== "loading",
+				),
 				file: null,
 				schedule: false,
 				scheduledAt: "",
@@ -305,6 +444,10 @@ function App() {
 		if (!videoId) return null;
 		return `https://www.youtube.com/shorts/${videoId}`;
 	}
+	function instagramPostUrl(uri: string | undefined): string | null {
+		if (!uri) return null;
+		return uri;
+	}
 
 	if (session === "loading") {
 		return (
@@ -322,7 +465,7 @@ function App() {
 				<div className="px-6 py-10 sm:px-10 sm:py-14">
 					<p className="island-kicker mb-3">Let's publish something!</p>
 					<h1 className="display-title neon-gradient-text mb-2 text-3xl font-bold tracking-tight sm:text-4xl">
-						Post to Bluesky &amp; YouTube
+						Post to Bluesky, YouTube &amp; Instagram
 					</h1>
 					<p className="mb-6 text-sm text-muted-foreground">
 						Upload an image or video, add a caption, and publish to the
@@ -364,6 +507,26 @@ function App() {
 								.
 							</>
 						)}
+						{instagramSession === "loading" ? (
+							" Instagram: …"
+						) : instagramSession ? (
+							<>
+								{" "}
+								Instagram: <strong>@{instagramSession.username}</strong>.
+							</>
+						) : (
+							<>
+								{" "}
+								Instagram: not connected.{" "}
+								<Link
+									to="/login"
+									className="text-primary underline decoration-primary/50 underline-offset-2 hover:text-primary/80"
+								>
+									Connect on Login
+								</Link>
+								.
+							</>
+						)}
 					</p>
 
 					<Form {...form}>
@@ -387,8 +550,14 @@ function App() {
 											/>
 										</FormControl>
 										<FormDescription>
-											Images supported for Bluesky; video for YouTube Shorts.
+											Images for Bluesky and Instagram; video for YouTube
+											Shorts.
 										</FormDescription>
+										{aspectWarn && form.watch("postToInstagram") && (
+											<p className="text-sm text-amber-700 dark:text-amber-400">
+												{aspectWarn}
+											</p>
+										)}
 										<FormMessage />
 									</FormItem>
 								)}
@@ -498,8 +667,35 @@ function App() {
 										</FormItem>
 									)}
 								/>
+								<FormField
+									control={form.control}
+									name="postToInstagram"
+									render={({
+										field,
+									}: {
+										field: ControllerRenderProps<
+											PublishValues,
+											"postToInstagram"
+										>;
+									}) => (
+										<FormItem className="flex flex-row items-center gap-2 space-y-0">
+											<FormControl>
+												<Checkbox
+													checked={field.value}
+													onCheckedChange={field.onChange}
+													disabled={publishing || isSchedule}
+												/>
+											</FormControl>
+											<FormLabel className="cursor-pointer font-normal">
+												Post to Instagram
+											</FormLabel>
+										</FormItem>
+									)}
+								/>
 								<span className="text-xs text-muted-foreground">
-									(YouTube Shorts use your channel auth)
+									{isSchedule
+										? "(Instagram can’t be scheduled yet)"
+										: "(YouTube Shorts use your channel auth)"}
 								</span>
 							</div>
 
@@ -538,9 +734,8 @@ function App() {
 										<FormItem>
 											<FormLabel>Date &amp; time</FormLabel>
 											<FormControl>
-												<input
+												<Input
 													type="datetime-local"
-													className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 													min={new Date().toISOString().slice(0, 16)}
 													{...field}
 												/>
@@ -636,9 +831,10 @@ function App() {
 							>
 								<div className="w-full overflow-hidden bg-muted">
 									{item.mediaType === "image" ? (
-										<img
+										<Image
 											src={item.mediaPath}
 											alt=""
+											layout="fullWidth"
 											className="h-auto w-full object-contain"
 										/>
 									) : (
@@ -699,20 +895,23 @@ function App() {
 					</p>
 				) : (
 					<>
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						{/* pinterest-style masonry via CSS columns (pure CSS, no JS) */}
+						<div className="columns-1 gap-4 sm:columns-2 lg:columns-5">
 							{history.slice(0, historyToShow).map((item) => {
 								const blueskyUrl = blueskyPostUrl(item.bluesky?.uri);
 								const youtubeUrl = youtubePostUrl(item.youtube?.videoId);
+								const instagramUrl = instagramPostUrl(item.instagram?.uri);
 								return (
 									<Card
 										key={item.id}
-										className="overflow-hidden border-primary/25 bg-card/80 shadow-md transition hover:border-primary/40 hover:shadow-lg py-0 flex flex-col gap-2 max-h-max"
+										className="break-inside-avoid mb-4 overflow-hidden border-primary/25 bg-card/80 shadow-md transition hover:border-primary/40 hover:shadow-lg py-0 flex flex-col gap-2 max-h-max"
 									>
 										<div className="w-full overflow-hidden bg-muted">
 											{item.mediaType === "image" ? (
-												<img
+												<Image
 													src={item.mediaPath}
 													alt=""
+													layout="fullWidth"
 													className="h-auto w-full object-contain"
 												/>
 											) : (
@@ -721,14 +920,31 @@ function App() {
 													controls
 													preload="metadata"
 													playsInline
-													className="aspect-video w-full object-contain"
+													className="w-full object-contain"
+													style={{
+														aspectRatio: videoAspectRatios[item.id] ?? 16 / 9,
+													}}
 													aria-label="Video"
+													onLoadedMetadata={(e) => {
+														const v = e.currentTarget;
+														if (v.videoWidth && v.videoHeight) {
+															setVideoAspectRatios((prev) => ({
+																...prev,
+																[item.id]: v.videoWidth / v.videoHeight,
+															}));
+														}
+													}}
 												>
 													<track kind="captions" srcLang="en" label="English" />
 												</video>
 											)}
 										</div>
 										<div className="p-3">
+											{wasSentToCloudinary(item.caption, item.mediaType) && (
+												<div className="mb-2">
+													<CloudinaryBadge />
+												</div>
+											)}
 											<p className="line-clamp-2 text-sm font-medium">
 												{item.caption || "No caption"}
 											</p>
@@ -736,8 +952,9 @@ function App() {
 												{new Date(item.createdAt).toLocaleString()}
 												{item.bluesky && " · Bluesky"}
 												{item.youtube && " · YouTube"}
+												{item.instagram && " · Instagram"}
 											</p>
-											{(blueskyUrl || youtubeUrl) && (
+											{(blueskyUrl || youtubeUrl || instagramUrl) && (
 												<div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
 													{blueskyUrl && (
 														<a
@@ -757,6 +974,16 @@ function App() {
 															className="text-primary underline-offset-2 hover:underline"
 														>
 															View post on YouTube
+														</a>
+													)}
+													{instagramUrl && (
+														<a
+															href={instagramUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-primary underline-offset-2 hover:underline"
+														>
+															View post on Instagram
 														</a>
 													)}
 												</div>

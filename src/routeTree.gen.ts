@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadRouteImport } from './routes/api.upload'
 import { Route as AuthYoutubeCallbackRouteImport } from './routes/auth.youtube.callback'
+import { Route as AuthInstagramCallbackRouteImport } from './routes/auth.instagram.callback'
 import { Route as ApiCronProcessScheduledRouteImport } from './routes/api.cron.process-scheduled'
 
 const LoginRoute = LoginRouteImport.update({
@@ -35,6 +36,11 @@ const AuthYoutubeCallbackRoute = AuthYoutubeCallbackRouteImport.update({
   path: '/auth/youtube/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthInstagramCallbackRoute = AuthInstagramCallbackRouteImport.update({
+  id: '/auth/instagram/callback',
+  path: '/auth/instagram/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronProcessScheduledRoute = ApiCronProcessScheduledRouteImport.update({
   id: '/api/cron/process-scheduled',
   path: '/api/cron/process-scheduled',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/api/upload': typeof ApiUploadRoute
   '/api/cron/process-scheduled': typeof ApiCronProcessScheduledRoute
+  '/auth/instagram/callback': typeof AuthInstagramCallbackRoute
   '/auth/youtube/callback': typeof AuthYoutubeCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/api/upload': typeof ApiUploadRoute
   '/api/cron/process-scheduled': typeof ApiCronProcessScheduledRoute
+  '/auth/instagram/callback': typeof AuthInstagramCallbackRoute
   '/auth/youtube/callback': typeof AuthYoutubeCallbackRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/api/upload': typeof ApiUploadRoute
   '/api/cron/process-scheduled': typeof ApiCronProcessScheduledRoute
+  '/auth/instagram/callback': typeof AuthInstagramCallbackRoute
   '/auth/youtube/callback': typeof AuthYoutubeCallbackRoute
 }
 export interface FileRouteTypes {
@@ -70,6 +79,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/api/upload'
     | '/api/cron/process-scheduled'
+    | '/auth/instagram/callback'
     | '/auth/youtube/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -77,6 +87,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/api/upload'
     | '/api/cron/process-scheduled'
+    | '/auth/instagram/callback'
     | '/auth/youtube/callback'
   id:
     | '__root__'
@@ -84,6 +95,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/api/upload'
     | '/api/cron/process-scheduled'
+    | '/auth/instagram/callback'
     | '/auth/youtube/callback'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +104,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiUploadRoute: typeof ApiUploadRoute
   ApiCronProcessScheduledRoute: typeof ApiCronProcessScheduledRoute
+  AuthInstagramCallbackRoute: typeof AuthInstagramCallbackRoute
   AuthYoutubeCallbackRoute: typeof AuthYoutubeCallbackRoute
 }
 
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthYoutubeCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/instagram/callback': {
+      id: '/auth/instagram/callback'
+      path: '/auth/instagram/callback'
+      fullPath: '/auth/instagram/callback'
+      preLoaderRoute: typeof AuthInstagramCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/process-scheduled': {
       id: '/api/cron/process-scheduled'
       path: '/api/cron/process-scheduled'
@@ -140,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiUploadRoute: ApiUploadRoute,
   ApiCronProcessScheduledRoute: ApiCronProcessScheduledRoute,
+  AuthInstagramCallbackRoute: AuthInstagramCallbackRoute,
   AuthYoutubeCallbackRoute: AuthYoutubeCallbackRoute,
 }
 export const routeTree = rootRouteImport

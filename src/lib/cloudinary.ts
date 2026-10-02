@@ -5,9 +5,10 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { v2 as cloudinary } from "cloudinary";
-import { CLOUDINARY_CATEGORY_HASHTAGS } from "#/lib/constants";
+import { getTagsFromCaption } from "#/lib/constants";
 
 const CLOUD_FOLDER = "illustration";
+const INSTAGRAM_PUBLISH_FOLDER = "instagram-publish";
 
 function getConfig() {
 	const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -17,15 +18,18 @@ function getConfig() {
 	return { cloudName, apiKey, apiSecret };
 }
 
-/**
- * Find which category hashtags appear in the caption (as #tag, case-insensitive).
- */
-export function getTagsFromCaption(caption: string): string[] {
-	const lower = caption.toLowerCase();
-	return CLOUDINARY_CATEGORY_HASHTAGS.filter((tag) => {
-		const hashtag = `#${tag.toLowerCase()}`;
-		return lower.includes(hashtag);
+function configureCloudinary(): NonNullable<
+	ReturnType<typeof getConfig>
+> | null {
+	const config = getConfig();
+	if (!config) return null;
+	cloudinary.config({
+		cloud_name: config.cloudName,
+		api_key: config.apiKey,
+		api_secret: config.apiSecret,
+		secure: true,
 	});
+	return config;
 }
 
 /**
@@ -53,19 +57,12 @@ export async function uploadImageToCloudinaryIfTagged(
 	const tags = getTagsFromCaption(caption);
 	if (tags.length === 0) return { uploaded: false };
 
-	const config = getConfig();
-	if (!config) return { uploaded: false, error: "Cloudinary not configured" };
+	if (!configureCloudinary())
+		return { uploaded: false, error: "Cloudinary not configured" };
 
 	const absolutePath = getAbsolutePath(mediaPath);
 	if (!existsSync(absolutePath))
 		return { uploaded: false, error: `File not found: ${mediaPath}` };
-
-	cloudinary.config({
-		cloud_name: config.cloudName,
-		api_key: config.apiKey,
-		api_secret: config.apiSecret,
-		secure: true,
-	});
 
 	// same naming as instagram-cloudinary: timestamp_id for sortable public_id
 	const timestamp = new Date(createdAt).valueOf();
@@ -110,5 +107,45 @@ export async function uploadImageToCloudinaryIfTagged(
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		return { uploaded: false, error: message };
+	}
+}
+
+/**
+ * Upload image to Cloudinary folder used as a public HTTPS host for Meta's image_url.
+ * Always uploads (ignores category hashtags). Separate from illustration archival.
+ */
+export async function uploadImageForInstagramPublish(params: {
+	mediaPath: string;
+}): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+	const { mediaPath } = params;
+	if (!configureCloudinary())
+		return { ok: false, error: "Cloudinary not configured" };
+
+	const absolutePath = getAbsolutePath(mediaPath);
+	if (!existsSync(absolutePath))
+		return { ok: false, error: `File not found: ${mediaPath}` };
+
+	const basename =
+		mediaPath.replace(/^.*\//, "").replace(/\.[a-z0-9]+$/i, "") || "image";
+	const publicId = `${Date.now()}_${basename}`;
+
+	try {
+		const result = await cloudinary.uploader.upload(absolutePath, {
+			public_id: publicId,
+			folder: INSTAGRAM_PUBLISH_FOLDER,
+			overwrite: true,
+			resource_type: "image",
+		});
+		const url =
+			typeof result.secure_url === "string"
+				? result.secure_url
+				: typeof result.url === "string"
+					? result.url
+					: null;
+		if (!url) return { ok: false, error: "Cloudinary upload returned no URL" };
+		return { ok: true, url };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : String(err);
+		return { ok: false, error: message };
 	}
 }

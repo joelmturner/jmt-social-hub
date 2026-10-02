@@ -6,6 +6,7 @@ const postedDestinationSchema = z.object({
   postedAt: z.string(),
   uri: z.string().optional(),
   videoId: z.string().optional(),
+  mediaId: z.string().optional(),
 })
 const posts = defineCollection({
   name: 'posts',
@@ -18,6 +19,7 @@ const posts = defineCollection({
     mediaType: z.enum(['image', 'video']),
     bluesky: postedDestinationSchema.optional(),
     youtube: postedDestinationSchema.optional(),
+    instagram: postedDestinationSchema.optional(),
     content: z.string().optional(),
   }),
   transform: (document) => ({

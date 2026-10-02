@@ -1,18 +1,19 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export function MdxCallout({
-  title,
-  children,
+	title,
+	children,
 }: {
-  title: string
-  children: ReactNode
+	title: string;
+	children: ReactNode;
 }) {
-  return (
-    <aside className="not-prose my-6 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <p className="island-kicker mb-2">{title}</p>
-      <div className="text-sm leading-7 text-[var(--muted-foreground)]">
-        {children}
-      </div>
-    </aside>
-  )
+	return (
+		<Card className="not-prose my-6 p-4" data-slot="callout">
+			<p className="island-kicker mb-2">{title}</p>
+			<CardContent className="p-0 text-sm leading-7 text-muted-foreground">
+				{children}
+			</CardContent>
+		</Card>
+	);
 }

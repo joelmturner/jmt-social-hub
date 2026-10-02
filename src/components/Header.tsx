@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Header() {
 	return (
-		<header className="sticky top-0 z-50 border-b border-primary/20 bg-[#0a0a12]/95 px-4 backdrop-blur supports-backdrop-filter:bg-[#0a0a12]/80 shadow-[0_1px_0_rgba(0,245,255,0.08)]">
+		<header className="sticky top-0 z-50 border-b border-primary/20 bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80 shadow-header-bar">
 			<nav className="page-wrap flex flex-wrap items-center gap-x-3 gap-y-2 py-3 sm:py-4 justify-between">
 				<h2 className="m-0 shrink-0 text-base font-semibold tracking-tight">
 					<Button variant="outline" size="sm" asChild>
@@ -11,7 +11,7 @@ export default function Header() {
 							to="/"
 							className="inline-flex items-center gap-2 no-underline border-primary/30 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
 						>
-							<span className="size-2 rounded-full bg-primary shadow-[0_0_8px_#00f5ff]" />
+							<span className="size-2 rounded-full bg-primary shadow-indicator-glow" />
 							JMT Hub
 						</Link>
 					</Button>

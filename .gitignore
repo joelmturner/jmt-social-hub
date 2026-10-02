@@ -18,3 +18,4 @@ data/
 public/uploads
 .pnpm-store
 .youtube-sessions.json
+.instagram-sessions.json
