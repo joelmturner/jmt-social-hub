@@ -59,13 +59,14 @@ function InstagramCallbackPage() {
 
 	return (
 		<main className="page-wrap px-4 pb-8 pt-14">
-			<div className="mx-auto max-w-md rounded-xl border border-border bg-card px-6 py-10 text-center shadow-sm">
-				<p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					Instagram
-				</p>
-				<h1 className="mb-4 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
+			<div className="island-shell relative mx-auto max-w-md overflow-hidden px-6 py-10 text-center">
+				<p className="island-kicker mb-3 justify-center">Instagram</p>
+				<h1 className="mb-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
 					Connecting account…
 				</h1>
+				<div className="ornament-rule" aria-hidden="true">
+					<span>◆</span>
+				</div>
 				<p
 					className={
 						status === "error"

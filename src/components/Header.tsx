@@ -9,9 +9,9 @@ export default function Header() {
 					<Button variant="outline" size="sm" asChild>
 						<Link
 							to="/"
-							className="inline-flex items-center gap-2 no-underline border-primary/30 text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+							className="inline-flex items-center gap-2 no-underline border-primary/30 font-display tracking-wider text-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
 						>
-							<span className="size-2 rounded-full bg-primary shadow-indicator-glow" />
+							<span className="film-mark" aria-hidden="true" />
 							JMT Hub
 						</Link>
 					</Button>

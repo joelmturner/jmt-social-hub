@@ -464,9 +464,12 @@ function App() {
 			<Card className="rise-in island-shell relative mx-auto max-w-2xl overflow-hidden">
 				<div className="px-6 py-10 sm:px-10 sm:py-14">
 					<p className="island-kicker mb-3">Let's publish something!</p>
-					<h1 className="display-title neon-gradient-text mb-2 text-3xl font-bold tracking-tight sm:text-4xl">
+					<h1 className="display-title title-card-text mb-2 text-3xl font-bold tracking-tight sm:text-4xl">
 						Post to Bluesky, YouTube &amp; Instagram
 					</h1>
+					<div className="ornament-rule" aria-hidden="true">
+						<span>◆</span>
+					</div>
 					<p className="mb-6 text-sm text-muted-foreground">
 						Upload an image or video, add a caption, and publish to the
 						destinations you choose.
@@ -601,7 +604,7 @@ function App() {
 														type="button"
 														onClick={() => appendHashtag(tag)}
 														disabled={publishing}
-														className="rounded-full border border-primary/30 bg-card px-2.5 py-1 text-xs text-primary transition hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50"
+														className="rounded-sm border border-primary/30 bg-card px-2.5 py-1 text-xs text-primary transition hover:border-primary/50 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50"
 													>
 														#{tag}
 													</button>
@@ -827,7 +830,7 @@ function App() {
 						{scheduledList.map((item) => (
 							<Card
 								key={item.id}
-								className="overflow-hidden border-primary/25 bg-card/80 shadow-md transition hover:border-primary/40 hover:shadow-lg"
+								className="feature-card overflow-hidden transition"
 							>
 								<div className="w-full overflow-hidden bg-muted">
 									{item.mediaType === "image" ? (
@@ -904,7 +907,7 @@ function App() {
 								return (
 									<Card
 										key={item.id}
-										className="break-inside-avoid mb-4 overflow-hidden border-primary/25 bg-card/80 shadow-md transition hover:border-primary/40 hover:shadow-lg py-0 flex flex-col gap-2 max-h-max"
+										className="feature-card break-inside-avoid mb-4 overflow-hidden py-0 flex flex-col gap-2 max-h-max transition"
 									>
 										<div className="w-full overflow-hidden bg-muted">
 											{item.mediaType === "image" ? (

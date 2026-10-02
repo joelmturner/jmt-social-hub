@@ -152,14 +152,15 @@ function LoginPage() {
 	return (
 		<main className="page-wrap px-4 pb-8 pt-14">
 			<div className="mx-auto grid max-w-3xl gap-6 md:grid-cols-2">
-				<Card className="rise-in relative overflow-hidden">
+				<Card className="rise-in island-shell relative overflow-hidden">
 					<div className="px-6 py-10 sm:px-10 sm:py-14">
-						<p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Bluesky (AT Protocol)
-						</p>
-						<h1 className="mb-5 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
+						<p className="island-kicker mb-3">Bluesky (AT Protocol)</p>
+						<h1 className="mb-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
 							Log in
 						</h1>
+						<div className="ornament-rule" aria-hidden="true">
+							<span>◆</span>
+						</div>
 						<p className="mb-6 text-sm text-muted-foreground">
 							Use your Bluesky handle and an{" "}
 							<a
@@ -209,18 +210,19 @@ function LoginPage() {
 					</div>
 				</Card>
 
-				<Card className="rise-in relative overflow-hidden">
+				<Card className="rise-in island-shell relative overflow-hidden">
 					<div className="px-6 py-10 sm:px-10 sm:py-14">
-						<p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							YouTube
-						</p>
-						<h2 className="mb-5 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
+						<p className="island-kicker mb-3">YouTube</p>
+						<h2 className="mb-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
 							{youtubeSession === "loading"
 								? "Connect channel"
 								: youtubeSession
 									? "Channel connected"
 									: "Connect channel"}
 						</h2>
+						<div className="ornament-rule" aria-hidden="true">
+							<span>◆</span>
+						</div>
 						<p className="mb-6 text-sm text-muted-foreground">
 							{youtubeSession === "loading" ? (
 								"Checking connection…"
@@ -265,18 +267,19 @@ function LoginPage() {
 					</div>
 				</Card>
 
-				<Card className="rise-in relative overflow-hidden md:col-span-2">
+				<Card className="rise-in island-shell relative overflow-hidden md:col-span-2">
 					<div className="px-6 py-10 sm:px-10 sm:py-14">
-						<p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-							Instagram
-						</p>
-						<h2 className="mb-5 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
+						<p className="island-kicker mb-3">Instagram</p>
+						<h2 className="mb-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl">
 							{instagramSession === "loading"
 								? "Connect account"
 								: instagramSession
 									? "Account connected"
 									: "Connect account"}
 						</h2>
+						<div className="ornament-rule" aria-hidden="true">
+							<span>◆</span>
+						</div>
 						<p className="mb-6 text-sm text-muted-foreground">
 							{instagramSession === "loading" ? (
 								"Checking connection…"
